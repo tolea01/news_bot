@@ -1,0 +1,30 @@
+{
+  "name": "news_bot",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node dist/app.js",
+    "dev": "nodemon --watch src --ext ts --exec ts-node src/app.ts",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tolea01/news_bot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tolea01/news_bot/issues"
+  },
+  "homepage": "https://github.com/Tolea01/news_bot#readme",
+  "description": "",
+  "dependencies": {
+    "expres": "^0.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.3",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
