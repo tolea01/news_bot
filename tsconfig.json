@@ -7,7 +7,7 @@
 
 		// Environment Settings
 		// See also https://aka.ms/tsconfig/module
-		"module": "ESNext",
+		"module": "commonjs",
 		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
 		"allowJs": true,
@@ -38,17 +38,13 @@
 		// Recommended Options
 		"strict": true,
 		"jsx": "react-jsx",
-		"verbatimModuleSyntax": true,
+		"verbatimModuleSyntax": false,
 		"isolatedModules": true,
 		"noUncheckedSideEffectImports": true,
 		"moduleDetection": "force",
 		"skipLibCheck": true
 	},
 
-	"ts-node": {
-		"esm": true
-	},
-  
 	"include": ["src/**/*"],
 	"exclude": ["node_modules"]
 }
