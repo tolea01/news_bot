@@ -30,6 +30,8 @@ model News {
   created_ad DateTime @default(now())
 
   readBy NewsRead[]
+
+  @@map("news")
 }
 
 model NewsRead {
