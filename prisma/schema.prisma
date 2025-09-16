@@ -12,4 +12,35 @@ model User {
   username String
   first_name String
   last_name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readNews NewsRead[]
+
+  @@map("users")
+}
+
+model News {
+  id Int @id @default(autoincrement())
+  title String
+  content String
+  description String?
+  author String?
+  published_at DateTime
+  created_ad DateTime @default(now())
+
+  readBy NewsRead[]
+}
+
+model NewsRead {
+  id Int @id @default(autoincrement())
+  userId Int
+  newsId Int
+  read_at DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  news News @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@map("user_read_news")
+
 }
