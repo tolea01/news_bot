@@ -12,8 +12,8 @@ model User {
   username String
   first_name String
   last_name String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   readNews NewsRead[]
 
@@ -27,7 +27,7 @@ model News {
   description String?
   author String?
   published_at DateTime
-  created_ad DateTime @default(now())
+  created_at DateTime @default(now())
 
   readBy NewsRead[]
 
