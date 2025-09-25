@@ -1,9 +1,10 @@
 import { Context, Telegraf } from 'telegraf';
 import UserService from '../../services/user/user.service';
 import LOGGER from '../../utils/logger';
+import { ICommand } from '../../interfaces/command.interface'
 
-export default class StartCommand {
-  private bot: Telegraf<Context>;
+export default class StartCommand implements ICommand {
+  public bot: Telegraf<Context>;
 
   constructor(bot: Telegraf<Context>) {
     this.bot = bot;

@@ -1,5 +1,6 @@
 import { Context, Telegraf } from 'telegraf';
 import { ConfigService } from '../config/config.service';
+import { ICommand } from '../interfaces/command.interface';
 import LOGGER from '../utils/logger';
 import StartCommand from './commands/start';
 
@@ -23,8 +24,9 @@ export default class TelegramBot {
   }
 
   loadCommands() {
-    const startCommand = new StartCommand(this.bot);
-    startCommand.init();
+    const commands: ICommand[] = [new StartCommand(this.bot)];
+
+    commands.forEach((command: ICommand) => command.init());
 
     LOGGER.info('All comand loaded succesufuly');
   }
