@@ -1,4 +1,4 @@
-import winston from 'winston';
+import * as winston from 'winston';
 import { ConfigService } from '../config/config.service';
 
 const LOGGER: winston.Logger = winston.createLogger({
