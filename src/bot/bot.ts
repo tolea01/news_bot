@@ -5,7 +5,7 @@ import LOGGER from '../utils/logger';
 import StartCommand from './commands/start';
 
 export default class TelegramBot {
-  private bot: Telegraf<Context>;
+  public bot: Telegraf<Context>;
   configService: ConfigService = new ConfigService();
   TelegramBotToken: string = this.configService.get('BOT_API_KEY');
 
