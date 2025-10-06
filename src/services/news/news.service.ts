@@ -1,6 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
 import { ConfigService } from '../../config/config.service';
+import PRISMA from '../../db/db.config';
 import LOGGER from '../../utils/logger';
+import { NewsDto } from './news.dto';
 
 export default class NewsService {
   private configService: ConfigService = new ConfigService();
@@ -34,5 +36,31 @@ export default class NewsService {
     } catch (error) {
       LOGGER.error('Error fetching news from NewsAPI', { error: error });
     }
+  }
+
+  async uploadNewsToDb(articles: NewsDto[]) {
+    try {
+      const formatedArticles = articles.map((article) => ({
+        title: article.title,
+        content: article.content,
+        description: article.description,
+        author: article.author,
+      }));
+
+      const news = await PRISMA.news.createMany({
+        data: formatedArticles,
+        skipDuplicates: true,
+      });
+
+      return news;
+    } catch (error) {
+      LOGGER.error('Failed to process news', { error });
+
+      throw error;
+    }
+  }
+
+  async getAllNews() {
+    return PRISMA.news.findMany();
   }
 }

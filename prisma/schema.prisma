@@ -22,11 +22,10 @@ model User {
 
 model News {
   id Int @id @default(autoincrement())
-  title String
+  title String @unique
   content String
   description String?
   author String?
-  published_at DateTime
   created_at DateTime @default(now())
 
   readBy NewsRead[]

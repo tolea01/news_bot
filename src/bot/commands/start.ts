@@ -21,7 +21,9 @@ export default class StartCommand implements ICommand {
     try {
       const newsService: NewsService = new NewsService();
       const message: string = (ctx.message as any)?.text;
-      const articles = await newsService.fetchNews(message);
+      const newsFromAPI = await newsService.fetchNews(message);
+      const newsFromDb = await newsService.getAllNews();
+      const existingNewsTitles = newsFromDb.map((article) => article.title);
 
       if (!message) {
         await ctx.reply('Nu s-a putut procesa mesajul introdus, mai încercați');
@@ -29,13 +31,13 @@ export default class StartCommand implements ICommand {
 
       if (message.startsWith('/')) return;
 
-      if (!articles || articles.length === 0) {
+      if (!newsFromAPI || newsFromAPI.length === 0) {
         await ctx.reply('❌ Nu am găsit știri pentru această căutare.');
         return;
       }
 
-      const replyMessage = articles
-        .slice(0, 5)
+      const replyMessage = newsFromAPI
+        .filter((article: any) => !existingNewsTitles.includes(article.title))
         .map(
           (article: any, index: number) =>
             `📰 *${index + 1}. ${article.title}*\n${article.url}`,
@@ -43,9 +45,13 @@ export default class StartCommand implements ICommand {
         .join('\n\n');
 
       LOGGER.info(`User query message ${message}`, {
-        fetchedNews: articles,
+        fetchedNews: newsFromAPI,
         query: message,
       });
+
+      await newsService.uploadNewsToDb(newsFromAPI);
+
+      LOGGER.info('News upload successfuly to db');
 
       await ctx.replyWithMarkdown(replyMessage);
     } catch (error) {
