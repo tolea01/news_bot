@@ -6,6 +6,9 @@ import LOGGER from '../../utils/logger';
 
 export default class StartCommand implements ICommand {
   public bot: Telegraf<Context>;
+  protected PAGE_SIZE = 3;
+  protected userNews = new Map<number, any[]>();
+  protected userPages = new Map<number, number>();
 
   constructor(bot: Telegraf<Context>) {
     this.bot = bot;
@@ -14,7 +17,74 @@ export default class StartCommand implements ICommand {
   init(): void {
     this.bot.start(this.handleStart.bind(this));
     this.bot.on('text', this.handleText.bind(this));
+    this.bot.on('callback_query', this.handlePagination.bind(this));
     LOGGER.info('Start command initialized');
+  }
+
+  async sendNewsPage(ctx: Context, news: any, page: number) {
+    try {
+      const start: number = page * this.PAGE_SIZE;
+      const end: number = start + this.PAGE_SIZE;
+      const pageNews = news.slice(start, end);
+      const hasPrev: boolean = page > 0;
+      const hasNext: boolean = end < news.length;
+      const buttons = [];
+
+      const message = pageNews
+        .map(
+          (article: any, index: number) =>
+            `📰 *${start + index + 1}. ${article.title}*\n${article.url}`,
+        )
+        .join('\n\n');
+
+      if (hasPrev) {
+        buttons.push({ text: '⬅️ Înapoi', callback_data: `prev_${page}` });
+      }
+
+      if (hasNext) {
+        buttons.push({ text: '➡️ Înainte', callback_data: `next_${page}` });
+      }
+
+      await ctx.replyWithMarkdown(message, {
+        reply_markup: { inline_keyboard: [buttons] },
+      });
+    } catch (error) {
+      LOGGER.info('Error sending data to user', {
+        error,
+        username: ctx.from?.username,
+      });
+      await ctx.reply('Nu s-a putut procesa mesajul introdus, mai încercați');
+    }
+  }
+
+  async handlePagination(ctx: Context) {
+    try {
+      const userId: number | undefined = ctx.from?.id;
+
+      if (!userId) return;
+
+      const data = ((await ctx.callbackQuery) as any).data;
+      const news: any[] | undefined = this.userNews.get(userId);
+      let page: number | undefined = this.userPages.get(userId) || 0;
+
+      if (!news) {
+        await ctx.answerCbQuery(
+          '❌ Nu am găsit știrile pentru această sesiune.',
+        );
+        return;
+      }
+
+      if (data.startsWith('next_')) page++;
+      if (data.startsWith('prev_')) page--;
+
+      this.userPages.set(userId, page);
+
+      await ctx.deleteMessage();
+
+      await this.sendNewsPage(ctx, news, page);
+    } catch (error) {
+      LOGGER.info('handle pagination error', { error });
+    }
   }
 
   async handleText(ctx: Context) {
@@ -23,10 +93,13 @@ export default class StartCommand implements ICommand {
       const message: string = (ctx.message as any)?.text;
       const newsFromAPI = await newsService.fetchNews(message);
       const newsFromDb = await newsService.getAllNews();
-      const existingNewsTitles = newsFromDb.map((article) => article.title);
+      const existingNewsTitles: string[] = newsFromDb.map(
+        (article) => article.title,
+      );
 
       if (!message) {
         await ctx.reply('Nu s-a putut procesa mesajul introdus, mai încercați');
+        return;
       }
 
       if (message.startsWith('/')) return;
@@ -36,26 +109,37 @@ export default class StartCommand implements ICommand {
         return;
       }
 
-      const replyMessage = newsFromAPI
-        .filter((article: any) => !existingNewsTitles.includes(article.title))
-        .map(
-          (article: any, index: number) =>
-            `📰 *${index + 1}. ${article.title}*\n${article.url}`,
-        )
-        .join('\n\n');
+      const reply = newsFromAPI.filter(
+        (article: any) => !existingNewsTitles.includes(article.title),
+      );
+
+      if (reply.length == 0) {
+        await ctx.reply(
+          '✅ Toate știrile pe această temă există deja în baza de date.',
+        );
+        return;
+      }
 
       LOGGER.info(`User query message ${message}`, {
         fetchedNews: newsFromAPI,
         query: message,
       });
 
-      await newsService.uploadNewsToDb(newsFromAPI);
+      await newsService.uploadNewsToDb(reply);
 
       LOGGER.info('News upload successfuly to db');
 
-      await ctx.replyWithMarkdown(replyMessage);
+      const userId: number | undefined = ctx.from?.id;
+
+      if (!userId) return;
+
+      this.userNews.set(userId, reply);
+      this.userPages.set(userId, 0);
+
+      await this.sendNewsPage(ctx, reply, 0);
     } catch (error) {
-      LOGGER.error('Error in handle text method', { error: error });
+      LOGGER.error('Error in handle text method', { error });
+      await ctx.reply('❌ A apărut o eroare la prelucrarea cererii.');
     }
   }
 
