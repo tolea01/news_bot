@@ -2,6 +2,7 @@ import { Context, Telegraf } from 'telegraf';
 import { ConfigService } from '../config/config.service';
 import { ICommand } from '../interfaces/command.interface';
 import LOGGER from '../utils/logger';
+import SearchNewsCommand from './commands/searchNews';
 import StartCommand from './commands/start';
 
 export default class TelegramBot {
@@ -24,7 +25,10 @@ export default class TelegramBot {
   }
 
   loadCommands() {
-    const commands: ICommand[] = [new StartCommand(this.bot)];
+    const commands: ICommand[] = [
+      new StartCommand(this.bot),
+      new SearchNewsCommand(this.bot),
+    ];
 
     commands.forEach((command: ICommand) => command.init());
 
