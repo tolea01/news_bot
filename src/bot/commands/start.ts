@@ -3,6 +3,7 @@ import { ICommand } from '../../interfaces/command.interface';
 import NewsService from '../../services/news/news.service';
 import UserService from '../../services/user/user.service';
 import LOGGER from '../../utils/logger';
+import Pagination from '../../utils/pagination';
 
 export default class StartCommand implements ICommand {
   public bot: Telegraf<Context>;
@@ -22,66 +23,17 @@ export default class StartCommand implements ICommand {
   }
 
   async sendNewsPage(ctx: Context, news: any, page: number) {
-    try {
-      const start: number = page * this.PAGE_SIZE;
-      const end: number = start + this.PAGE_SIZE;
-      const pageNews = news.slice(start, end);
-      const hasPrev: boolean = page > 0;
-      const hasNext: boolean = end < news.length;
-      const buttons = [];
-
-      const message = pageNews
-        .map(
-          (article: any, index: number) =>
-            `📰 *${start + index + 1}. ${article.title}*\n${article.url}`,
-        )
-        .join('\n\n');
-
-      if (hasPrev) {
-        buttons.push({ text: '⬅️ Înapoi', callback_data: `prev_${page}` });
-      }
-
-      if (hasNext) {
-        buttons.push({ text: '➡️ Înainte', callback_data: `next_${page}` });
-      }
-
-      await ctx.replyWithMarkdown(message, {
-        reply_markup: { inline_keyboard: [buttons] },
-      });
-    } catch (error) {
-      LOGGER.info('Error sending data to user', {
-        error,
-        username: ctx.from?.username,
-      });
-      await ctx.reply('Nu s-a putut procesa mesajul introdus, mai încercați');
-    }
+    await Pagination.sendDataOnPage(ctx, news, page, this.PAGE_SIZE);
   }
 
   async handlePagination(ctx: Context) {
     try {
-      const userId: number | undefined = ctx.from?.id;
-
-      if (!userId) return;
-
-      const data = ((await ctx.callbackQuery) as any).data;
-      const news: any[] | undefined = this.userNews.get(userId);
-      let page: number | undefined = this.userPages.get(userId) || 0;
-
-      if (!news) {
-        await ctx.answerCbQuery(
-          '❌ Nu am găsit știrile pentru această sesiune.',
-        );
-        return;
-      }
-
-      if (data.startsWith('next_')) page++;
-      if (data.startsWith('prev_')) page--;
-
-      this.userPages.set(userId, page);
-
-      await ctx.deleteMessage();
-
-      await this.sendNewsPage(ctx, news, page);
+      await Pagination.paginate(
+        ctx,
+        this.userNews,
+        this.userPages,
+        this.PAGE_SIZE,
+      );
     } catch (error) {
       LOGGER.info('handle pagination error', { error });
     }
